@@ -14,6 +14,11 @@ export default class Database {
                         password,
                     })
                     .then((res) => res.data);
+
+                /*if (!token) {
+                    throw new Error("Authentication not possible");
+                }*/
+
                 this.#instance.defaults.headers.common[
                     "Authorization"
                 ] = `Bearer ${token}`;
@@ -38,7 +43,7 @@ export default class Database {
             throw new Error("no tableName provided");
         }
         if (!this.meta.tables[name]) {
-            throw new Error("table does not exist");
+            throw new Error(`table "${name}" does not exist in this database`);
         }
         return new Table(this.meta.tables[name], this.#instance);
     }
@@ -58,7 +63,7 @@ class Table {
 
     async get(id) {
         return this.#instance
-            .get(`/table/${this.meta.name}/${id}`)
+            .get(`/table/${this.meta.name}/data/${id}`)
             .then((res) => res.data);
     }
 
@@ -72,7 +77,7 @@ class Table {
 
     async find(query, context = {}) {
         let result = await this.#instance
-            .post(`/table/${this.meta.name}/`, {
+            .post(`/table/${this.meta.name}/data/`, {
                 query: query.toString(),
                 context,
             })
@@ -86,14 +91,14 @@ class Table {
 
     async save(data) {
         let id = await this.#instance
-            .put(`/table/${this.meta.name}/`, data)
+            .put(`/table/${this.meta.name}/data/`, data)
             .then((res) => res.data);
         return id;
     }
 
     async remove(id) {
         return this.#instance
-            .delete(`/table/${this.meta.name}/${id}`)
+            .delete(`/table/${this.meta.name}/data/${id}`)
             .then((res) => res.data);
     }
 }
@@ -143,7 +148,7 @@ class Query {
 
     async then(resolve, error) {
         let result = await this.#instance
-            .post(`/table/${this.#tableName}/`, {
+            .post(`/table/${this.#tableName}/data/`, {
                 type: "chain",
                 chain: this.#actions,
             })
